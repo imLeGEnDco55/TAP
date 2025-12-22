@@ -268,5 +268,3 @@ Ese documento contiene:
 
 *"El espejo no miente. Los números no mienten. Tú decides qué hacer con la verdad."*
 ```
-
----
