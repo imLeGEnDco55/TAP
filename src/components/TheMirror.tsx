@@ -1,24 +1,21 @@
 import { useState, useEffect } from 'react';
 import { calculateTimeStats, type TimeStats } from '../utils/timeCalculations';
 
-// Definimos la estructura del Estado Mental (Simulando .ALMA-STATE)
-interface DailyState {
-    date: string;
-    flowHours: number;
-    chaosHours: number;
-    grindHours: number; // Trabajo obligatorio
-    notes: string;
-}
-
 export function TheMirror() {
     const [stats, setStats] = useState<TimeStats | null>(null);
 
-    // Estado para el input diario
-    const [dailyInput, setDailyInput] = useState<DailyState>(() => {
-        // Intentar recuperar del localStorage al cargar
+    // 1. RECUPERAR EL ORIGEN (Fecha Real)
+    // Buscamos en localStorage, si no está, usamos la fecha Wai-L por defecto (pero a las 00:00)
+    const [birthDate] = useState<Date>(() => {
+        const saved = localStorage.getItem('tap_birthdate');
+        // Default Wai-L: 25 Junio 1991, pero ahora esperamos que el usuario defina la hora en el Setup
+        return saved ? new Date(saved) : new Date('1991-06-25T00:00:00');
+    });
+
+    // Estado para el input diario (LocalStorage separado)
+    const [dailyInput, setDailyInput] = useState(() => {
         const saved = localStorage.getItem('tap_daily_state');
         return saved ? JSON.parse(saved) : {
-            date: new Date().toISOString().split('T')[0],
             flowHours: 0,
             chaosHours: 0,
             grindHours: 0,
@@ -27,56 +24,55 @@ export function TheMirror() {
     });
 
     useEffect(() => {
-        // Tu fecha de nacimiento: 25 Junio 1991 (Bio.md)
-        const birthDate = new Date('1991-06-25T00:00:00');
-
         const timer = setInterval(() => {
             setStats(calculateTimeStats(birthDate));
-        }, 1000);
+        }, 1000); // Actualización cada segundo para ver los segundos caer
 
         return () => clearInterval(timer);
-    }, []);
+    }, [birthDate]);
 
-    // Guardar cambios automáticamente
+    // ... (El resto del código de inputs y renderizado se mantiene igual)
+    // ... (Solo asegúrate de que el renderizado usa 'stats' como antes)
+
     useEffect(() => {
         localStorage.setItem('tap_daily_state', JSON.stringify(dailyInput));
     }, [dailyInput]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setDailyInput(prev => ({
+        setDailyInput((prev: any) => ({
             ...prev,
             [name]: name === 'notes' ? value : Number(value)
         }));
     };
 
-    if (!stats) return <div className="text-terminal-green animate-pulse">INIT_MIRROR_PROTOCOL...</div>;
+    if (!stats) return <div className="text-terminal-green animate-pulse">SYNCING_TEMPORAL_ORIGIN...</div>;
 
-    // Cálculos visuales para la barra de día
+    // Cálculos visuales
     const totalTracked = dailyInput.flowHours + dailyInput.chaosHours + dailyInput.grindHours;
-    const sleepAssumed = 7; // Asumimos 7h de sueño base
+    const sleepAssumed = 7;
     const unaccounted = 24 - sleepAssumed - totalTracked;
 
     return (
         <div className="space-y-8 font-mono">
-            {/* SECCIÓN 1: TIEMPO VIVIDO (La verdad inmutable) */}
-            <div className="border border-terminal-green/30 p-6 bg-black/50 backdrop-blur-sm relative overflow-hidden group">
+            {/* SECCIÓN 1: TIEMPO VIVIDO */}
+            <div className="border border-terminal-green/30 p-6 bg-black/50 backdrop-blur-sm relative overflow-hidden group hover:border-terminal-green/50 transition-colors">
                 <div className="absolute top-0 right-0 p-2 opacity-50 text-xs text-terminal-green">
-                    [SYSTEM: ONLINE]
+                    [ORIGIN: {birthDate.toLocaleDateString()} {birthDate.toLocaleTimeString()}]
                 </div>
 
                 <h2 className="text-2xl mb-6 text-terminal-green font-bold tracking-wider glitch-text">
-                    THE MIRROR v1.0
+                    THE MIRROR v2.0
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                        <p className="text-gray-400 text-sm uppercase tracking-widest">Tiempo Vivido</p>
+                        <p className="text-gray-400 text-sm uppercase tracking-widest">Tiempo Vivido (Precisión Absoluta)</p>
                         <p className="text-3xl md:text-4xl text-white font-bold tabular-nums">
                             {stats.years}a {stats.months}m {stats.days}d
                         </p>
                         <p className="text-xl text-terminal-green/80 tabular-nums">
-                            {stats.hours}h {stats.minutes}m {stats.seconds}s
+                            {stats.hours}h {stats.minutes}m <span className="text-terminal-green animate-pulse">{stats.seconds}s</span>
                         </p>
                     </div>
 
@@ -86,24 +82,20 @@ export function TheMirror() {
                             <p className="text-white text-lg">
                                 Has vivido aprox <span className="text-terminal-green font-bold">{Math.floor(stats.totalDays / 7)}</span> semanas.
                             </p>
-                            <p className="text-gray-500 text-xs mt-2">
-                                "El tiempo no se ahorra, solo se gasta."
-                            </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* SECCIÓN 2: ALMA-STATE INPUT (El Diario Vivo) */}
+            {/* SECCIÓN 2: INPUTS (Igual que antes...) */}
             <div className="border border-chaos-orange/30 p-6 bg-black/50 relative">
                 <h3 className="text-xl text-chaos-orange mb-4 flex items-center gap-2">
-                    <span>⚡</span> REGISTRO DIARIO (Input)
+                    <span>⚡</span> REGISTRO DIARIO
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    {/* Grind Input */}
                     <div className="space-y-2">
-                        <label className="text-xs text-gray-400 uppercase">GRIND (Trabajo/Deber)</label>
+                        <label className="text-xs text-gray-400 uppercase">GRIND (Deber)</label>
                         <input
                             type="number"
                             name="grindHours"
@@ -114,9 +106,8 @@ export function TheMirror() {
                         />
                     </div>
 
-                    {/* Flow Input */}
                     <div className="space-y-2">
-                        <label className="text-xs text-terminal-green uppercase">FLOW (Música/Platzi)</label>
+                        <label className="text-xs text-terminal-green uppercase">FLOW (Crear)</label>
                         <input
                             type="number"
                             name="flowHours"
@@ -127,9 +118,8 @@ export function TheMirror() {
                         />
                     </div>
 
-                    {/* Chaos Input */}
                     <div className="space-y-2">
-                        <label className="text-xs text-chaos-orange uppercase">CHAOS (Procrastinación)</label>
+                        <label className="text-xs text-chaos-orange uppercase">CHAOS (Perder)</label>
                         <input
                             type="number"
                             name="chaosHours"
@@ -149,25 +139,12 @@ export function TheMirror() {
                     <div style={{ width: `${(dailyInput.chaosHours / 24) * 100}%` }} className="bg-chaos-orange" title="Chaos" />
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-xs text-gray-400 uppercase">BITÁCORA RÁPIDA (¿Qué hiciste hoy?)</label>
-                    <textarea
-                        name="notes"
-                        value={dailyInput.notes}
-                        onChange={handleInputChange}
-                        placeholder="Ej: Lavé platos 8h, escuché podcast de producción. Avancé 1h en Ableton. Me perdí 2h en YouTube."
-                        className="w-full bg-black border border-gray-800 text-gray-300 p-3 h-24 text-sm focus:border-terminal-green focus:outline-none resize-none font-mono"
-                    />
-                </div>
-
-                {/* Feedback Brutal */}
                 <div className="mt-6 pt-6 border-t border-gray-800 text-center">
                     {unaccounted < 0 ? (
-                        <span className="text-alert-red font-bold animate-pulse">⚠️ ERROR DE TIEMPO: El día solo tiene 24h.</span>
+                        <span className="text-alert-red font-bold animate-pulse">⚠️ ERROR DE TIEMPO</span>
                     ) : (
                         <span className="text-gray-500">
                             Horas sin registrar: <span className="text-white font-bold">{unaccounted.toFixed(1)}h</span>
-                            {unaccounted > 4 && <span className="text-chaos-orange ml-2">← ¿Dónde carajos está este tiempo?</span>}
                         </span>
                     )}
                 </div>

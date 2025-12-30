@@ -1,46 +1,47 @@
-import { UserProfile, DayEntry } from '../types';
+import { UserProfile, DailyEntry } from '../types';
 
-const STORAGE_KEY = 'abyss_protocol_data';
+const STORAGE_KEY = 'tap_data';
 
-export const loadProfile = (): UserProfile | null => {
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (!data) return null;
-        return JSON.parse(data);
-    } catch (error) {
-        console.error('Error loading profile:', error);
-        return null;
-    }
-};
-
-export const saveProfile = (profile: UserProfile): void => {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    } catch (error) {
-        console.error('Error saving profile:', error);
-    }
-};
-
+// Crear perfil por defecto (Ahora con deuda vacía)
 export const createDefaultProfile = (birthdate: string): UserProfile => {
     return {
         birthdate,
         entries: [],
+        debt: [] // <--- NECESARIO para cumplir con el tipo UserProfile
     };
 };
 
-export const addEntry = (profile: UserProfile, entry: DayEntry): UserProfile => {
-    const existingIndex = profile.entries.findIndex(e => e.date === entry.date);
+// Cargar perfil (Con migración defensiva)
+export const loadProfile = (): UserProfile | null => {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (!data) return null;
 
-    if (existingIndex >= 0) {
-        // Actualizar entrada existente
-        const newEntries = [...profile.entries];
-        newEntries[existingIndex] = entry;
-        return { ...profile, entries: newEntries };
-    } else {
-        // Agregar nueva entrada
-        return {
-            ...profile,
-            entries: [...profile.entries, entry],
-        };
+    try {
+        const parsed = JSON.parse(data);
+
+        // MIGRACIÓN: Si es un perfil viejo (v0.1) sin 'debt', se lo agregamos
+        if (!parsed.debt) {
+            parsed.debt = [];
+        }
+
+        return parsed as UserProfile;
+    } catch (e) {
+        console.error("Error corrupto en TAP data:", e);
+        return null;
     }
+};
+
+// Guardar perfil
+export const saveProfile = (profile: UserProfile): void => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+};
+
+// Agregar entrada diaria
+export const addEntry = (profile: UserProfile, entry: DailyEntry): UserProfile => {
+    const updatedProfile: UserProfile = {
+        ...profile,
+        entries: [...profile.entries, entry]
+    };
+    saveProfile(updatedProfile);
+    return updatedProfile;
 };
