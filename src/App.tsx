@@ -4,7 +4,7 @@ import { DebtLedger } from './components/DebtLedger';
 import { TerminalSetup } from './components/TerminalSetup';
 import { MusicVault } from './components/MusicVault';
 import { KnowledgeRaids } from './components/KnowledgeRaids';
-// 👇 IMPORTANTE: Traemos las herramientas de la base de datos
+import { FlowForecaster } from './components/FlowForecaster'; // <--- ESTE FALTABA
 import { createDefaultProfile, saveProfile } from './utils/storage';
 
 function App() {
@@ -25,7 +25,7 @@ function App() {
         // 1. Guardar la fecha simple (Legacy)
         localStorage.setItem('tap_birthdate', date);
 
-        // 2. 👇 CRÍTICO: Crear la Base de Datos Maestra vacía
+        // 2. Crear la Base de Datos Maestra vacía
         const newProfile = createDefaultProfile(date);
         saveProfile(newProfile);
 
@@ -42,7 +42,7 @@ function App() {
                     <header className="flex justify-between items-end border-b border-gray-800 pb-4">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tighter text-white">
-                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.5.1</span>
+                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.5.2</span>
                             </h1>
                             <p className="text-xs text-gray-500 uppercase tracking-[0.2em]">The Abyss Protocol</p>
                         </div>
@@ -53,7 +53,14 @@ function App() {
                     </header>
 
                     <main className="space-y-12">
-                        <section><TheMirror /></section>
+                        <section>
+                            <TheMirror />
+                        </section>
+
+                        {/* ZONA DE INTELIGENCIA (EL ORÁCULO) */}
+                        <section>
+                            <FlowForecaster />
+                        </section>
 
                         {/* ZONA TÁCTICA */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
