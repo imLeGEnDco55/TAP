@@ -1,4 +1,4 @@
-import { UserProfile, DailyEntry } from '../types';
+import { UserProfile, DailyEntry, MusicProject, KnowledgeRaid } from '../types';
 
 const STORAGE_KEY = 'tap_data';
 
@@ -7,7 +7,9 @@ export const createDefaultProfile = (birthdate: string): UserProfile => {
     return {
         birthdate,
         entries: [],
-        debt: [] // <--- NECESARIO para cumplir con el tipo UserProfile
+        debt: [], // <--- NECESARIO para cumplir con el tipo UserProfile
+        musicProjects: [],
+        raids: [] // <--- Inicializamos vacío
     };
 };
 
@@ -23,6 +25,8 @@ export const loadProfile = (): UserProfile | null => {
         if (!parsed.debt) {
             parsed.debt = [];
         }
+        if (!parsed.musicProjects) parsed.musicProjects = [];
+        if (!parsed.raids) parsed.raids = []; // <--- Migración v0.4.0
 
         return parsed as UserProfile;
     } catch (e) {
@@ -44,4 +48,17 @@ export const addEntry = (profile: UserProfile, entry: DailyEntry): UserProfile =
     };
     saveProfile(updatedProfile);
     return updatedProfile;
+};
+
+export const saveMusicProjects = (profile: UserProfile, projects: MusicProject[]) => {
+    const updated = { ...profile, musicProjects: projects };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    return updated;
+};
+
+// Helper para guardar Raids
+export const saveRaids = (profile: UserProfile, raids: KnowledgeRaid[]) => {
+    const updated = { ...profile, raids: raids };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    return updated;
 };
