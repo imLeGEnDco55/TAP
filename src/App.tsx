@@ -4,7 +4,8 @@ import { DebtLedger } from './components/DebtLedger';
 import { TerminalSetup } from './components/TerminalSetup';
 import { MusicVault } from './components/MusicVault';
 import { KnowledgeRaids } from './components/KnowledgeRaids';
-import { FlowForecaster } from './components/FlowForecaster';
+// 👇 IMPORTANTE: Traemos las herramientas de la base de datos
+import { createDefaultProfile, saveProfile } from './utils/storage';
 
 function App() {
     const [isSetup, setIsSetup] = useState(false);
@@ -12,13 +13,22 @@ function App() {
     useEffect(() => {
         // Verificar si ya existe una fecha guardada
         const savedDate = localStorage.getItem('tap_birthdate');
-        if (savedDate) {
+        // Verificar TAMBIÉN si existe la base de datos real
+        const hasData = localStorage.getItem('tap_data');
+
+        if (savedDate && hasData) {
             setIsSetup(true);
         }
     }, []);
 
     const handleSetupComplete = (date: string) => {
+        // 1. Guardar la fecha simple (Legacy)
         localStorage.setItem('tap_birthdate', date);
+
+        // 2. 👇 CRÍTICO: Crear la Base de Datos Maestra vacía
+        const newProfile = createDefaultProfile(date);
+        saveProfile(newProfile);
+
         setIsSetup(true);
     };
 
@@ -32,7 +42,7 @@ function App() {
                     <header className="flex justify-between items-end border-b border-gray-800 pb-4">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tighter text-white">
-                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.5.0</span>
+                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.5.1</span>
                             </h1>
                             <p className="text-xs text-gray-500 uppercase tracking-[0.2em]">The Abyss Protocol</p>
                         </div>
@@ -44,11 +54,6 @@ function App() {
 
                     <main className="space-y-12">
                         <section><TheMirror /></section>
-
-                        {/* ZONA DE INTELIGENCIA */}
-                        <section>
-                            <FlowForecaster />
-                        </section>
 
                         {/* ZONA TÁCTICA */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
