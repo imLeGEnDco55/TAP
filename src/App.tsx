@@ -4,6 +4,7 @@ import { DebtLedger } from './components/DebtLedger';
 import { TerminalSetup } from './components/TerminalSetup';
 import { MusicVault } from './components/MusicVault';
 import { KnowledgeRaids } from './components/KnowledgeRaids';
+import { FlowForecaster } from './components/FlowForecaster';
 
 function App() {
     const [isSetup, setIsSetup] = useState(false);
@@ -31,7 +32,7 @@ function App() {
                     <header className="flex justify-between items-end border-b border-gray-800 pb-4">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tighter text-white">
-                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.4.0</span>
+                                T.A.P. <span className="text-terminal-green text-sm align-top">v0.5.0</span>
                             </h1>
                             <p className="text-xs text-gray-500 uppercase tracking-[0.2em]">The Abyss Protocol</p>
                         </div>
@@ -43,6 +44,11 @@ function App() {
 
                     <main className="space-y-12">
                         <section><TheMirror /></section>
+
+                        {/* ZONA DE INTELIGENCIA */}
+                        <section>
+                            <FlowForecaster />
+                        </section>
 
                         {/* ZONA TÁCTICA */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

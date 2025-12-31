@@ -1,16 +1,20 @@
 import { useState, useEffect } from 'react';
 import { calculateTimeStats, type TimeStats } from '../utils/timeCalculations';
-import { addEntry, loadProfile } from '../utils/storage'; // <--- IMPORTANTE
+import { addEntry, loadProfile } from '../utils/storage';
 import { DailyEntry } from '../types';
 
 export function TheMirror() {
     const [stats, setStats] = useState<TimeStats | null>(null);
 
+    // 1. RECUPERAR EL ORIGEN (Fecha Real)
+    // Buscamos en localStorage, si no está, usamos la fecha Wai-L por defecto (pero a las 00:00)
     const [birthDate] = useState<Date>(() => {
         const saved = localStorage.getItem('tap_birthdate');
+        // Default Wai-L: 25 Junio 1991, pero ahora esperamos que el usuario defina la hora en el Setup
         return saved ? new Date(saved) : new Date('1991-06-25T00:00:00');
     });
 
+    // Estado para el input diario (LocalStorage separado)
     const [dailyInput, setDailyInput] = useState(() => {
         const saved = localStorage.getItem('tap_daily_state');
         return saved ? JSON.parse(saved) : {
@@ -24,9 +28,13 @@ export function TheMirror() {
     useEffect(() => {
         const timer = setInterval(() => {
             setStats(calculateTimeStats(birthDate));
-        }, 1000);
+        }, 1000); // Actualización cada segundo para ver los segundos caer
+
         return () => clearInterval(timer);
     }, [birthDate]);
+
+    // ... (El resto del código de inputs y renderizado se mantiene igual)
+    // ... (Solo asegúrate de que el renderizado usa 'stats' como antes)
 
     useEffect(() => {
         localStorage.setItem('tap_daily_state', JSON.stringify(dailyInput));
@@ -40,40 +48,42 @@ export function TheMirror() {
         }));
     };
 
-    // --- LA FUNCIÓN QUE TE FALTABA O FALLABA ---
     const handleCommitDay = () => {
         const confirmMsg = `
-     RESUMEN DEL RITUAL:
-     - Flow: ${dailyInput.flowHours}h
-     - Chaos: ${dailyInput.chaosHours}h
-     - Grind: ${dailyInput.grindHours}h
-     
-     ¿Confirmas que este día ha terminado? 
-     Esto quedará grabado en tu Memoria Sagrada.
-     `;
+       RESUMEN DEL RITUAL:
+       - Flow: ${dailyInput.flowHours}h
+       - Chaos: ${dailyInput.chaosHours}h
+       - Grind: ${dailyInput.grindHours}h
+
+       ¿Confirmas que este día ha terminado? 
+       Esto quedará grabado en tu Memoria Sagrada.
+       `;
 
         if (!window.confirm(confirmMsg)) return;
 
         const profile = loadProfile();
         if (profile) {
             const entry: DailyEntry = {
-                date: new Date().toISOString().split('T')[0],
-                flow: Number(dailyInput.flowHours),
-                chaos: Number(dailyInput.chaosHours),
-                grind: Number(dailyInput.grindHours),
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                flow: dailyInput.flowHours,
+                chaos: dailyInput.chaosHours,
+                grind: dailyInput.grindHours,
                 notes: dailyInput.notes
             };
 
             addEntry(profile, entry);
 
+            // Resetear inputs para mañana
             setDailyInput({ flowHours: 0, chaosHours: 0, grindHours: 0, notes: '' });
             alert("DÍA REGISTRADO. EL FORECASTER SE HA ACTUALIZADO.");
+            // Opcional: recargar para ver cambios en Forecaster
             window.location.reload();
         }
     };
 
     if (!stats) return <div className="text-terminal-green animate-pulse">SYNCING_TEMPORAL_ORIGIN...</div>;
 
+    // Cálculos visuales
     const totalTracked = dailyInput.flowHours + dailyInput.chaosHours + dailyInput.grindHours;
     const sleepAssumed = 7;
     const unaccounted = 24 - sleepAssumed - totalTracked;
@@ -92,7 +102,7 @@ export function TheMirror() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-2">
-                        <p className="text-gray-400 text-sm uppercase tracking-widest">Tiempo Vivido</p>
+                        <p className="text-gray-400 text-sm uppercase tracking-widest">Tiempo Vivido (Precisión Absoluta)</p>
                         <p className="text-3xl md:text-4xl text-white font-bold tabular-nums">
                             {stats.years}a {stats.months}m {stats.days}d
                         </p>
@@ -112,7 +122,7 @@ export function TheMirror() {
                 </div>
             </div>
 
-            {/* SECCIÓN 2: INPUTS */}
+            {/* SECCIÓN 2: INPUTS (Igual que antes...) */}
             <div className="border border-chaos-orange/30 p-6 bg-black/50 relative">
                 <h3 className="text-xl text-chaos-orange mb-4 flex items-center gap-2">
                     <span>⚡</span> REGISTRO DIARIO
@@ -127,8 +137,10 @@ export function TheMirror() {
                             value={dailyInput.grindHours}
                             onChange={handleInputChange}
                             className="w-full bg-black border border-gray-700 text-white p-3 focus:border-white focus:outline-none text-xl text-center"
+                            min="0" max="24"
                         />
                     </div>
+
                     <div className="space-y-2">
                         <label className="text-xs text-terminal-green uppercase">FLOW (Crear)</label>
                         <input
@@ -137,8 +149,10 @@ export function TheMirror() {
                             value={dailyInput.flowHours}
                             onChange={handleInputChange}
                             className="w-full bg-black border border-terminal-green text-terminal-green p-3 focus:border-white focus:outline-none text-xl text-center shadow-[0_0_10px_rgba(0,255,0,0.1)]"
+                            min="0" max="24"
                         />
                     </div>
+
                     <div className="space-y-2">
                         <label className="text-xs text-chaos-orange uppercase">CHAOS (Perder)</label>
                         <input
@@ -147,26 +161,30 @@ export function TheMirror() {
                             value={dailyInput.chaosHours}
                             onChange={handleInputChange}
                             className="w-full bg-black border border-chaos-orange text-chaos-orange p-3 focus:border-white focus:outline-none text-xl text-center"
+                            min="0" max="24"
                         />
                     </div>
                 </div>
 
-                {/* BARRA VISUAL */}
+                {/* Visualizador del Día */}
                 <div className="h-4 bg-gray-900 w-full flex rounded-full overflow-hidden mb-6 border border-gray-800">
-                    <div style={{ width: `${(sleepAssumed / 24) * 100}%` }} className="bg-blue-900/30" title="Sueño" />
+                    <div style={{ width: `${(sleepAssumed / 24) * 100}%` }} className="bg-blue-900/30" title="Sueño (7h)" />
                     <div style={{ width: `${(dailyInput.grindHours / 24) * 100}%` }} className="bg-gray-600" title="Grind" />
                     <div style={{ width: `${(dailyInput.flowHours / 24) * 100}%` }} className="bg-terminal-green" title="Flow" />
                     <div style={{ width: `${(dailyInput.chaosHours / 24) * 100}%` }} className="bg-chaos-orange" title="Chaos" />
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-gray-800 text-center mb-6">
-                    <span className="text-gray-500">
-                        Horas sin registrar: <span className="text-white font-bold">{unaccounted.toFixed(1)}h</span>
-                    </span>
+                <div className="mt-6 pt-6 border-t border-gray-800 text-center">
+                    {unaccounted < 0 ? (
+                        <span className="text-alert-red font-bold animate-pulse">⚠️ ERROR DE TIEMPO</span>
+                    ) : (
+                        <span className="text-gray-500">
+                            Horas sin registrar: <span className="text-white font-bold">{unaccounted.toFixed(1)}h</span>
+                        </span>
+                    )}
                 </div>
 
-                {/* EL ÁREA DE COMMIT (LO NUEVO) */}
-                <div className="space-y-4">
+                <div className="mt-8 space-y-4">
                     <textarea
                         name="notes"
                         value={dailyInput.notes}
